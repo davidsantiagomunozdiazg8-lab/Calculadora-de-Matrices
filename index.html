@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Matrices | Estilo Photomath</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pmRed: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                        },
+                        pmDark: {
+                            800: '#1e1e24',
+                            900: '#111115',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .matrix-bracket {
+            position: relative;
+            padding: 6px 10px;
+            display: inline-block;
+        }
+        .matrix-bracket::before, .matrix-bracket::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 7px;
+            border: 2.5px solid #111115;
+        }
+        .matrix-bracket::before {
+            left: 0;
+            border-right: none;
+            border-radius: 5px 0 0 5px;
+        }
+        .matrix-bracket::after {
+            right: 0;
+            border-left: none;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .step-card {
+            border-left: 4px solid #e11d48;
+        }
+
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col antialiased selection:bg-pmRed-100 selection:text-pmRed-700">
+
+    <!-- Header Principal Estilo Photomath -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 bg-pmRed-600 text-white flex items-center justify-center font-bold font-mono text-xl rounded-lg shadow-sm">
+                    f(x)
+                </div>
+                <h1 class="text-xl font-black tracking-tight text-gray-900 uppercase">
+                    MATRIX<span class="text-pmRed-600 font-normal">MATH</span>
+                </h1>
+            </div>
+
+            <!-- Navegación por Pestañas -->
+            <nav class="hidden md:flex space-x-2" id="main-nav">
+                <button onclick="switchTab('tab-operations')" id="btn-tab-operations" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg text-pmRed-600 bg-pmRed-50 border border-pmRed-100 transition-all">
+                    Operaciones Básicas
+                </button>
+                <button onclick="switchTab('tab-combined')" id="btn-tab-combined" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all">
+                    Operaciones Combinadas
+                </button>
+                <button onclick="switchTab('tab-inverse')" id="btn-tab-inverse" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all">
+                    Matriz Inversa
+                </button>
+                <button onclick="switchTab('tab-system')" id="btn-tab-system" class="tab-btn px-4 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all">
+                    Sistema de Ecuaciones
+                </button>
+            </nav>
+        </div>
+
+        <!-- Menú Móvil Tabs -->
+        <div class="md:hidden border-t border-gray-200 flex justify-around p-1 bg-white">
+            <button onclick="switchTab('tab-operations')" id="btn-tab-operations-m" class="tab-btn-m flex-1 text-center py-2 text-xs font-bold text-pmRed-600 border-b-2 border-pmRed-600">
+                Básicas
+            </button>
+            <button onclick="switchTab('tab-combined')" id="btn-tab-combined-m" class="tab-btn-m flex-1 text-center py-2 text-xs font-bold text-gray-500">
+                Combinadas
+            </button>
+            <button onclick="switchTab('tab-inverse')" id="btn-tab-inverse-m" class="tab-btn-m flex-1 text-center py-2 text-xs font-bold text-gray-500">
+                Inversa
+            </button>
+            <button onclick="switchTab('tab-system')" id="btn-tab-system-m" class="tab-btn-m flex-1 text-center py-2 text-xs font-bold text-gray-500">
+                Sistemas
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================= PESTAÑA 1: OPERACIONES BÁSICAS ================= -->
+        <section id="tab-operations" class="tab-content block space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">Operaciones entre Matrices</h2>
+                        <p class="text-xs text-gray-500">Suma, resta, multiplicación y potencia de matrices cuadradas o rectangulares.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold uppercase text-gray-500">Matriz A:</span>
+                            <select id="op-rows-a" onchange="generateOpMatrices()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-pmRed-600">
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <span class="text-gray-400 font-bold">×</span>
+                            <select id="op-cols-a" onchange="generateOpMatrices()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-pmRed-600">
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center space-x-2 border-l border-gray-300 pl-4">
+                            <span class="text-xs font-bold uppercase text-gray-500">Matriz B:</span>
+                            <select id="op-rows-b" onchange="generateOpMatrices()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-pmRed-600">
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <span class="text-gray-400 font-bold">×</span>
+                            <select id="op-cols-b" onchange="generateOpMatrices()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-pmRed-600">
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-800 font-mono">MATRIZ A</span>
+                            <button onclick="fillRandom('ma')" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorios</button>
+                        </div>
+                        <div id="container-matrix-a" class="flex justify-center items-center"></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-800 font-mono">MATRIZ B</span>
+                            <button onclick="fillRandom('mb')" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorios</button>
+                        </div>
+                        <div id="container-matrix-b" class="flex justify-center items-center"></div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3 pt-4 border-t border-gray-100">
+                    <button onclick="calculateOperation('add')" class="px-5 py-2.5 bg-pmRed-600 text-white rounded-xl font-semibold text-sm hover:bg-pmRed-700 transition-all shadow-sm">
+                        Suma (A + B)
+                    </button>
+                    <button onclick="calculateOperation('subtract')" class="px-5 py-2.5 bg-pmRed-600 text-white rounded-xl font-semibold text-sm hover:bg-pmRed-700 transition-all shadow-sm">
+                        Resta (A - B)
+                    </button>
+                    <button onclick="calculateOperation('multiply')" class="px-5 py-2.5 bg-pmDark-900 text-white rounded-xl font-semibold text-sm hover:bg-black transition-all shadow-sm">
+                        Multiplicación (A × B)
+                    </button>
+                    <div class="flex items-center space-x-1 bg-gray-100 p-1 rounded-xl border border-gray-300">
+                        <button onclick="calculateOperation('power')" class="px-4 py-1.5 bg-pmRed-600 text-white rounded-lg font-semibold text-sm hover:bg-pmRed-700 transition-all shadow-sm">
+                            Potencia (Aᵏ)
+                        </button>
+                        <span class="text-xs font-mono font-bold text-gray-700 pl-1">k =</span>
+                        <input type="number" id="op-power-k" value="2" min="1" max="10" class="w-12 h-8 text-center text-sm font-mono border border-gray-300 rounded-lg focus:ring-1 focus:ring-pmRed-600 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div id="op-result-panel" class="hidden bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-100 pb-2">Desarrollo y Resultado</h3>
+                <div id="op-result-content" class="space-y-6"></div>
+            </div>
+        </section>
+
+
+        <!-- ================= PESTAÑA 2: OPERACIONES COMBINADAS ================= -->
+        <section id="tab-combined" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">Operaciones Combinadas / Expresiones Libres</h2>
+                        <p class="text-xs text-gray-500">Soporta sumas, restas, escalares, productos, potencias y paréntesis arbitrarios.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                            <span class="text-xs font-bold uppercase text-gray-500">ORDEN (A, B, C, D-Filas):</span>
+                            <select id="comb-size" onchange="generateCombMatrices()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-pmRed-600">
+                                <option value="2">2 × 2</option>
+                                <option value="3" selected>3 × 3</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center space-x-2 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                            <span class="text-xs font-bold uppercase text-gray-500">DIMENSIÓN D:</span>
+                            <span id="comb-d-rows-label" class="text-xs font-mono font-bold text-gray-800">3</span>
+                            <span class="text-gray-400 font-bold">×</span>
+                            <select id="comb-d-cols" onchange="generateCombMatrices()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-pmRed-600">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matrices A, B, C, D -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 my-6 items-start">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-800 font-mono">MATRIZ A</span>
+                            <button onclick="fillRandom('mc_a')" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorio</button>
+                        </div>
+                        <div id="container-matrix-ca" class="flex justify-center items-center"></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-800 font-mono">MATRIZ B</span>
+                            <button onclick="fillRandom('mc_b')" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorio</button>
+                        </div>
+                        <div id="container-matrix-cb" class="flex justify-center items-center"></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-800 font-mono">MATRIZ C (Vector)</span>
+                            <button onclick="fillRandom('mc_c')" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorio</button>
+                        </div>
+                        <div id="container-matrix-cc" class="flex justify-center items-center"></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-sm text-gray-800 font-mono">MATRIZ D</span>
+                            <button onclick="fillRandom('mc_d')" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorio</button>
+                        </div>
+                        <div id="container-matrix-cd" class="flex justify-center items-center"></div>
+                    </div>
+                </div>
+
+                <!-- Expresiones -->
+                <div class="pt-4 border-t border-gray-100 space-y-4">
+                    <span class="text-xs font-bold uppercase text-gray-500 block">Expresiones Rápidas:</span>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="setAndSolveExpr('A + B')" class="px-3 py-1.5 bg-gray-100 hover:bg-pmRed-50 hover:text-pmRed-600 border border-gray-300 rounded-lg text-xs font-mono font-bold transition-all">
+                            A + B
+                        </button>
+                        <button onclick="setAndSolveExpr('A + B - 2D')" class="px-3 py-1.5 bg-gray-100 hover:bg-pmRed-50 hover:text-pmRed-600 border border-gray-300 rounded-lg text-xs font-mono font-bold transition-all">
+                            A + B - 2D
+                        </button>
+                        <button onclick="setAndSolveExpr('(A + B) * C')" class="px-3 py-1.5 bg-gray-100 hover:bg-pmRed-50 hover:text-pmRed-600 border border-gray-300 rounded-lg text-xs font-mono font-bold transition-all">
+                            (A + B) · C
+                        </button>
+                        <button onclick="setAndSolveExpr('-2A + B')" class="px-3 py-1.5 bg-gray-100 hover:bg-pmRed-50 hover:text-pmRed-600 border border-gray-300 rounded-lg text-xs font-mono font-bold transition-all">
+                            -2A + B
+                        </button>
+                        <button onclick="setAndSolveExpr('(A - B) * (-B * C)')" class="px-3 py-1.5 bg-gray-100 hover:bg-pmRed-50 hover:text-pmRed-600 border border-gray-300 rounded-lg text-xs font-mono font-bold transition-all">
+                            [A - B] · [-B · C]
+                        </button>
+                        <button onclick="setAndSolveExpr('(A + B)^2 * D')" class="px-3 py-1.5 bg-gray-100 hover:bg-pmRed-50 hover:text-pmRed-600 border border-gray-300 rounded-lg text-xs font-mono font-bold transition-all">
+                            [A + B]² · D
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="comb-custom-expr" placeholder="Ej: A + B - 2D, (A + B) * C, 3A - 2B" class="flex-grow p-3 text-sm font-mono border border-gray-300 rounded-xl focus:ring-2 focus:ring-pmRed-600 focus:outline-none">
+                        <button onclick="solveCombinedExpr(document.getElementById('comb-custom-expr').value)" class="px-6 py-3 bg-pmRed-600 text-white font-bold text-sm rounded-xl hover:bg-pmRed-700 transition-all shadow-sm">
+                            Calcular
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Resultados Combinados -->
+            <div id="comb-result-panel" class="hidden bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-100 pb-2">Procedimiento Fotográfico Paso a Paso</h3>
+                <div id="comb-result-content" class="space-y-6"></div>
+            </div>
+        </section>
+
+
+        <!-- ================= PESTAÑA 3: INVERSA DE UNA MATRIZ ================= -->
+        <section id="tab-inverse" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">Matriz Inversa (A⁻¹)</h2>
+                        <p class="text-xs text-gray-500">Cálculo por Adjunta y por Gauss-Jordan [A | I].</p>
+                    </div>
+
+                    <div class="flex items-center space-x-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                        <span class="text-xs font-bold uppercase text-gray-500">Orden (n×n):</span>
+                        <select id="inv-order" onchange="generateInvMatrix()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-pmRed-600">
+                            <option value="2">2 × 2</option>
+                            <option value="3" selected>3 × 3</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="my-6 flex flex-col items-center justify-center space-y-4">
+                    <div class="flex justify-between items-center w-full max-w-xs">
+                        <span class="font-bold text-sm text-gray-800 font-mono">MATRIZ A</span>
+                        <button onclick="fillRandom('minv')" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorio</button>
+                    </div>
+                    <div id="container-matrix-inv"></div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3 pt-4 border-t border-gray-100">
+                    <button onclick="calculateInverseAdj()" class="px-6 py-2.5 bg-pmRed-600 text-white rounded-xl font-semibold text-sm hover:bg-pmRed-700 transition-all shadow-sm">
+                        Inversa por Adjunta: A⁻¹ = Adj(Aᵀ) / |A|
+                    </button>
+                    <button onclick="calculateInverseGJ()" class="px-6 py-2.5 bg-pmDark-900 text-white rounded-xl font-semibold text-sm hover:bg-black transition-all shadow-sm">
+                        Inversa por Gauss-Jordan [A | I]
+                    </button>
+                </div>
+            </div>
+
+            <div id="inv-result-panel" class="hidden bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-100 pb-2">Resolución Detallada</h3>
+                <div id="inv-steps-container" class="space-y-6"></div>
+            </div>
+        </section>
+
+
+        <!-- ================= PESTAÑA 4: SISTEMA DE ECUACIONES LINEALES ================= -->
+        <section id="tab-system" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">Sistema de Ecuaciones Lineales</h2>
+                        <p class="text-xs text-gray-500">Resolución con desarrollo de operaciones entre filas.</p>
+                    </div>
+
+                    <div class="flex items-center space-x-3 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                        <span class="text-xs font-bold uppercase text-gray-500">Ecuaciones:</span>
+                        <select id="sys-size" onchange="generateSystemFields()" class="bg-white border border-gray-300 rounded-md px-2 py-1 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-pmRed-600">
+                            <option value="2">2 × 2</option>
+                            <option value="3" selected>3 × 3</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="my-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm text-gray-800 font-mono">ECUACIONES LINEALES (A·X = B)</span>
+                        <button onclick="fillRandomSystem()" class="text-xs font-semibold text-pmRed-600 hover:underline">Aleatorios</button>
+                    </div>
+                    
+                    <div id="container-system-inputs" class="flex flex-col items-center justify-center space-y-3"></div>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3 pt-4 border-t border-gray-100">
+                    <button onclick="solveSystem('gauss')" class="px-5 py-2.5 bg-pmDark-900 text-white rounded-xl font-semibold text-sm hover:bg-black transition-all shadow-sm">
+                        Método de Gauss (Sustitución Atrás)
+                    </button>
+                    <button onclick="solveSystem('gauss-jordan')" class="px-5 py-2.5 bg-pmRed-600 text-white rounded-xl font-semibold text-sm hover:bg-pmRed-700 transition-all shadow-sm">
+                        Método de Gauss-Jordan (Matriz Reducida)
+                    </button>
+                </div>
+            </div>
+
+            <div id="sys-result-panel" class="hidden bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-100 pb-2" id="sys-result-title">Solución del Sistema</h3>
+                <div id="sys-steps-container" class="space-y-6"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-6 mt-12">
+        <div class="max-w-6xl mx-auto px-4 text-center text-xs text-gray-400 font-mono">
+            MATRIXMATH &copy; 2026 — Plataforma Educativa Estilo Photomath
+        </div>
+    </footer>
+
+
+    <!-- JAVASCRIPT DE LÓGICA Y PARSER RECURSIVO CORREGIDO -->
+    <script>
+        // ================= FRACCIONES =================
+        class Fraction {
+            constructor(num, den = 1) {
+                if (den === 0) throw new Error("División por cero");
+                if (den < 0) { num = -num; den = -den; }
+                const g = this.gcd(Math.abs(num), Math.abs(den));
+                this.n = Math.round(num / g);
+                this.d = Math.round(den / g);
+            }
+
+            gcd(a, b) { return b === 0 ? a : this.gcd(b, a % b); }
+            add(f) { return new Fraction(this.n * f.d + f.n * this.d, this.d * f.d); }
+            sub(f) { return new Fraction(this.n * f.d - f.n * this.d, this.d * f.d); }
+            mul(f) { return new Fraction(this.n * f.n, this.d * f.d); }
+            div(f) { return new Fraction(this.n * f.d, this.d * f.n); }
+            equalsZero() { return this.n === 0; }
+            equalsOne() { return this.n === 1 && this.d === 1; }
+
+            toHTML() {
+                if (this.d === 1) return `${this.n}`;
+                return `<span class="inline-flex flex-col items-center align-middle mx-0.5 text-xs">
+                    <span class="border-b border-gray-900 px-1 font-mono">${this.n}</span>
+                    <span class="px-1 font-mono">${this.d}</span>
+                </span>`;
+            }
+            toString() {
+                if (this.d === 1) return `${this.n}`;
+                return `${this.n}/${this.d}`;
+            }
+        }
+
+        function parseFraction(val) {
+            if (!val || String(val).trim() === '') return new Fraction(0);
+            val = String(val).trim();
+            if (val.includes('/')) {
+                const parts = val.split('/');
+                return new Fraction(parseInt(parts[0], 10), parseInt(parts[1], 10));
+            }
+            const num = parseFloat(val);
+            if (isNaN(num)) return new Fraction(0);
+            return new Fraction(Math.round(num * 1000), 1000);
+        }
+
+        // ================= PESTAÑAS =================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('#main-nav .tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 text-sm font-semibold rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all';
+            });
+            const activeDesktop = document.getElementById('btn-' + tabId);
+            if(activeDesktop) {
+                activeDesktop.className = 'tab-btn px-4 py-2 text-sm font-semibold rounded-lg text-pmRed-600 bg-pmRed-50 border border-pmRed-100 transition-all';
+            }
+
+            document.querySelectorAll('.tab-btn-m').forEach(btn => {
+                btn.className = 'tab-btn-m flex-1 text-center py-2 text-xs font-bold text-gray-500';
+            });
+            const activeMobile = document.getElementById('btn-' + tabId + '-m');
+            if(activeMobile) {
+                activeMobile.className = 'tab-btn-m flex-1 text-center py-2 text-xs font-bold text-pmRed-600 border-b-2 border-pmRed-600';
+            }
+        }
+
+        // ================= COMPONENTES RENDER =================
+        function renderMatrixInputs(containerId, rows, cols, prefix) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'matrix-bracket inline-block bg-white';
+
+            const grid = document.createElement('div');
+            grid.className = 'grid gap-2';
+            grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = `${prefix}_${i}_${j}`;
+                    input.value = Math.floor(Math.random() * 9) - 4;
+                    input.className = 'w-11 h-10 sm:w-12 sm:h-11 text-center font-mono font-bold text-sm bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pmRed-600 focus:bg-white transition-all';
+                    grid.appendChild(input);
+                }
+            }
+            wrapper.appendChild(grid);
+            container.appendChild(wrapper);
+        }
+
+        function getMatrixFromInputs(prefix, rows, cols) {
+            const matrix = [];
+            for (let i = 0; i < rows; i++) {
+                const row = [];
+                for (let j = 0; j < cols; j++) {
+                    const el = document.getElementById(`${prefix}_${i}_${j}`);
+                    row.push(parseFraction(el ? el.value : 0));
+                }
+                matrix.push(row);
+            }
+            return matrix;
+        }
+
+        function fillRandom(prefix) {
+            const inputs = document.querySelectorAll(`[id^="${prefix}_"]`);
+            inputs.forEach(input => {
+                input.value = Math.floor(Math.random() * 11) - 5;
+            });
+        }
+
+        function renderMatrixHTML(matrixFrac, title = "") {
+            const rows = matrixFrac.length;
+            const cols = matrixFrac[0].length;
+            
+            let html = title ? `<div class="text-xs font-mono font-bold text-gray-500 mb-1">${title}</div>` : '';
+            html += `<div class="matrix-bracket inline-block bg-white my-1">
+                        <div class="grid gap-x-3 gap-y-2 py-1 px-2 items-center text-center" style="grid-template-columns: repeat(${cols}, minmax(0, 1fr));">`;
+            
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    html += `<div class="px-1.5 py-1 font-mono text-sm font-bold text-gray-900 min-w-[2rem] flex items-center justify-center">${matrixFrac[i][j].toHTML()}</div>`;
+                }
+            }
+            
+            html += `   </div>
+                    </div>`;
+            return html;
+        }
+
+        function renderAugmentedMatrixHTML(matrixFrac, partitionCol, title = "") {
+            const rows = matrixFrac.length;
+            const cols = matrixFrac[0].length;
+            
+            let html = title ? `<div class="text-xs font-mono font-bold text-gray-500 mb-1">${title}</div>` : '';
+            html += `<div class="matrix-bracket inline-block bg-white my-1">
+                        <div class="flex items-center space-x-3 px-2 py-1">`;
+            
+            html += `<div class="grid gap-x-3 gap-y-2 text-center" style="grid-template-columns: repeat(${partitionCol}, minmax(0, 1fr));">`;
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < partitionCol; j++) {
+                    html += `<div class="px-1.5 py-1 font-mono text-sm font-bold text-gray-900 min-w-[2rem] flex items-center justify-center">${matrixFrac[i][j].toHTML()}</div>`;
+                }
+            }
+            html += `</div><div class="h-full border-r-2 border-gray-400 border-dashed my-1"></div>`;
+
+            html += `<div class="grid gap-x-3 gap-y-2 text-center" style="grid-template-columns: repeat(${cols - partitionCol}, minmax(0, 1fr));">`;
+            for (let i = 0; i < rows; i++) {
+                for (let j = partitionCol; j < cols; j++) {
+                    html += `<div class="px-1.5 py-1 font-mono text-sm font-bold text-gray-900 min-w-[2rem] flex items-center justify-center">${matrixFrac[i][j].toHTML()}</div>`;
+                }
+            }
+            html += `</div></div></div>`;
+            return html;
+        }
+
+        // ================= OPERACIONES BÁSICAS =================
+        function generateOpMatrices() {
+            const rA = parseInt(document.getElementById('op-rows-a').value);
+            const cA = parseInt(document.getElementById('op-cols-a').value);
+            const rB = parseInt(document.getElementById('op-rows-b').value);
+            const cB = parseInt(document.getElementById('op-cols-b').value);
+
+            renderMatrixInputs('container-matrix-a', rA, cA, 'ma');
+            renderMatrixInputs('container-matrix-b', rB, cB, 'mb');
+        }
+
+        function multiplyMatricesGeneral(A, B) {
+            const rA = A.length;
+            const cA = A[0].length;
+            const rB = B.length;
+            const cB = B[0].length;
+
+            if (cA !== rB) {
+                throw new Error(`Incompatibilidad de dimensiones para multiplicación: (${rA}×${cA}) y (${rB}×${cB}). Las columnas de A deben ser iguales a las filas de B.`);
+            }
+
+            let result = [];
+            let steps = [];
+
+            for (let i = 0; i < rA; i++) {
+                let row = [];
+                for (let j = 0; j < cB; j++) {
+                    let sum = new Fraction(0);
+                    let termsStr = [];
+
+                    for (let k = 0; k < cA; k++) {
+                        const prod = A[i][k].mul(B[k][j]);
+                        sum = sum.add(prod);
+                        termsStr.push(`${A[i][k].toString()}·${B[k][j].toString()}`);
+                    }
+                    row.push(sum);
+                    steps.push(`<span class="font-bold text-pmRed-600">[${i + 1},${j + 1}]</span> = ${termsStr.join(' + ')} = <span class="font-bold text-gray-900">${sum.toString()}</span>`);
+                }
+                result.push(row);
+            }
+
+            return { result, steps };
+        }
+
+        function calculateOperation(type) {
+            const rA = parseInt(document.getElementById('op-rows-a').value);
+            const cA = parseInt(document.getElementById('op-cols-a').value);
+            const rB = parseInt(document.getElementById('op-rows-b').value);
+            const cB = parseInt(document.getElementById('op-cols-b').value);
+
+            const panel = document.getElementById('op-result-panel');
+            const container = document.getElementById('op-result-content');
+
+            if (type === 'power') {
+                if (rA !== cA) {
+                    panel.classList.remove('hidden');
+                    container.innerHTML = `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold">
+                        La potencia de matrices requiere que la matriz sea cuadrada (m = n).
+                    </div>`;
+                    return;
+                }
+                const k = parseInt(document.getElementById('op-power-k').value) || 1;
+                const A = getMatrixFromInputs('ma', rA, cA);
+                
+                let stepsHTML = `<div class="bg-gray-50 p-3 rounded-xl border border-gray-200 font-mono text-sm mb-4">
+                    Calculando: <span class="font-bold text-pmRed-600">A<sup>${k}</sup></span>
+                </div>`;
+
+                let currentMat = A;
+
+                if (k === 1) {
+                    stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">A¹ = A</span>
+                        ${renderMatrixHTML(A, "Resultado Final")}
+                    </div>`;
+                } else {
+                    for (let p = 2; p <= k; p++) {
+                        const mult = multiplyMatricesGeneral(currentMat, A);
+                        
+                        stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-2">Paso ${p - 1}: A<sup>${p-1}</sup> × A = A<sup>${p}</sup></span>
+                            <div class="flex flex-wrap items-center gap-3 my-2">
+                                ${renderMatrixHTML(currentMat, `A<sup>${p-1}</sup>`)}
+                                <span class="text-lg font-bold font-mono">·</span>
+                                ${renderMatrixHTML(A, "A")}
+                            </div>
+                            <div class="text-xs font-mono font-bold text-gray-500 mt-3 mb-1">Cálculos interlineales por casilla:</div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono bg-white p-3 border border-gray-200 rounded-lg mb-3">
+                                ${mult.steps.map(s => `<div>${s}</div>`).join('')}
+                            </div>
+                            ${renderMatrixHTML(mult.result, `Resultado A<sup>${p}</sup>`)}
+                        </div>`;
+
+                        currentMat = mult.result;
+                    }
+                }
+
+                container.innerHTML = stepsHTML;
+                panel.classList.remove('hidden');
+                return;
+            }
+
+            const A = getMatrixFromInputs('ma', rA, cA);
+            const B = getMatrixFromInputs('mb', rB, cB);
+
+            if (type === 'add' || type === 'subtract') {
+                if (rA !== rB || cA !== cB) {
+                    panel.classList.remove('hidden');
+                    container.innerHTML = `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold">
+                        Dimensiones incompatibles para ${type === 'add' ? 'suma' : 'resta'}: Matriz A (${rA}×${cA}) y Matriz B (${rB}×${cB}). Ambas deben ser del mismo tamaño.
+                    </div>`;
+                    return;
+                }
+
+                let R = [];
+                for (let i = 0; i < rA; i++) {
+                    let row = [];
+                    for (let j = 0; j < cA; j++) {
+                        row.push(type === 'add' ? A[i][j].add(B[i][j]) : A[i][j].sub(B[i][j]));
+                    }
+                    R.push(row);
+                }
+                const symbol = type === 'add' ? '+' : '-';
+                container.innerHTML = `<div class="flex flex-wrap items-center justify-center gap-4">
+                    ${renderMatrixHTML(A, "Matriz A")}
+                    <span class="text-2xl font-bold font-mono text-pmRed-600">${symbol}</span>
+                    ${renderMatrixHTML(B, "Matriz B")}
+                    <span class="text-2xl font-bold font-mono text-gray-400">=</span>
+                    ${renderMatrixHTML(R, "Resultado")}
+                </div>`;
+                panel.classList.remove('hidden');
+            } else if (type === 'multiply') {
+                if (cA !== rB) {
+                    panel.classList.remove('hidden');
+                    container.innerHTML = `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold">
+                        Dimensiones incompatibles para A × B: Matriz A (${rA}×${cA}) y Matriz B (${rB}×${cB}). Las columnas de A (${cA}) deben ser iguales a las filas de B (${rB}).
+                    </div>`;
+                    return;
+                }
+                const mult = multiplyMatricesGeneral(A, B);
+                container.innerHTML = `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-2">Producto A × B</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono bg-white p-3 border border-gray-200 rounded-lg mb-3">
+                        ${mult.steps.map(s => `<div>${s}</div>`).join('')}
+                    </div>
+                    <div class="flex flex-wrap items-center justify-center gap-4">
+                        ${renderMatrixHTML(A, "Matriz A")}
+                        <span class="text-2xl font-bold font-mono text-pmRed-600">×</span>
+                        ${renderMatrixHTML(B, "Matriz B")}
+                        <span class="text-2xl font-bold font-mono text-gray-400">=</span>
+                        ${renderMatrixHTML(mult.result, "Matriz Resultado")}
+                    </div>
+                </div>`;
+                panel.classList.remove('hidden');
+            }
+        }
+
+        // ================= OPERACIONES COMBINADAS =================
+        function generateCombMatrices() {
+            const n = parseInt(document.getElementById('comb-size').value);
+            const dCols = parseInt(document.getElementById('comb-d-cols').value);
+
+            document.getElementById('comb-d-rows-label').textContent = n;
+
+            renderMatrixInputs('container-matrix-ca', n, n, 'mc_a');
+            renderMatrixInputs('container-matrix-cb', n, n, 'mc_b');
+            renderMatrixInputs('container-matrix-cc', n, 1, 'mc_c');
+            renderMatrixInputs('container-matrix-cd', n, dCols, 'mc_d');
+        }
+
+        function setAndSolveExpr(exprStr) {
+            document.getElementById('comb-custom-expr').value = exprStr;
+            solveCombinedExpr(exprStr);
+        }
+
+        function addOrSubWithSteps(M1, M2, operator, name1, name2) {
+            const r1 = M1.length, c1 = M1[0].length;
+            const r2 = M2.length, c2 = M2[0].length;
+            if (r1 !== r2 || c1 !== c2) {
+                throw new Error(`Incompatibilidad de dimensiones para ${operator === '+' ? 'suma' : 'resta'}: ${name1} (${r1}×${c1}) y ${name2} (${r2}×${c2}). No se pueden sumar/restar matrices de diferente tamaño.`);
+            }
+
+            let result = [];
+            let substeps = [];
+            for (let i = 0; i < r1; i++) {
+                let row = [];
+                for (let j = 0; j < c1; j++) {
+                    const val1 = M1[i][j];
+                    const val2 = M2[i][j];
+                    const resVal = operator === '+' ? val1.add(val2) : val1.sub(val2);
+                    row.push(resVal);
+                    substeps.push(`<span class="font-bold text-pmRed-600">[${i+1},${j+1}]</span> = ${val1.toString()} ${operator} ${val2.toString()} = <span class="font-bold text-gray-900">${resVal.toString()}</span>`);
+                }
+                result.push(row);
+            }
+            return { result, substeps };
+        }
+
+        function scaleMatrix(A, scalar) {
+            const sc = parseFraction(scalar);
+            return A.map(row => row.map(val => val.mul(sc)));
+        }
+
+        // INTÉRPRETE DE EXPRESIONES MATEMÁTICAS RECURSIVO UNIFICADO
+        function solveCombinedExpr(exprStr) {
+            if (!exprStr || !exprStr.trim()) return;
+            const n = parseInt(document.getElementById('comb-size').value);
+            const dCols = parseInt(document.getElementById('comb-d-cols').value);
+
+            const panel = document.getElementById('comb-result-panel');
+            const container = document.getElementById('comb-result-content');
+            panel.classList.remove('hidden');
+            container.innerHTML = '';
+
+            const matrices = {
+                'A': getMatrixFromInputs('mc_a', n, n),
+                'B': getMatrixFromInputs('mc_b', n, n),
+                'C': getMatrixFromInputs('mc_c', n, 1),
+                'D': getMatrixFromInputs('mc_d', n, dCols)
+            };
+
+            let stepsHTML = `<div class="bg-gray-50 p-3 rounded-xl border border-gray-200 font-mono text-sm mb-4">
+                Expresión Evaluada: <span class="font-bold text-pmRed-600">${exprStr}</span>
+            </div>`;
+
+            let stepCounter = 1;
+
+            try {
+                function parseAndEval(s) {
+                    s = s.trim();
+                    if (!s) throw new Error("Expresión vacía");
+
+                    while (s.startsWith('(') && s.endsWith(')')) {
+                        let inner = s.substring(1, s.length - 1);
+                        if (isBalanced(inner)) s = inner.trim();
+                        else break;
+                    }
+                    while (s.startsWith('[') && s.endsWith(']')) {
+                        let inner = s.substring(1, s.length - 1);
+                        if (isBalanced(inner)) s = inner.trim();
+                        else break;
+                    }
+
+                    let opIdx = findLowestOp(s, ['+', '-']);
+                    if (opIdx !== -1) {
+                        let op = s[opIdx];
+                        let leftStr = s.substring(0, opIdx).trim();
+                        let rightStr = s.substring(opIdx + 1).trim();
+
+                        let leftMat = parseAndEval(leftStr);
+                        let rightMat = parseAndEval(rightStr);
+
+                        let stepRes = addOrSubWithSteps(leftMat, rightMat, op, leftStr, rightStr);
+                        stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepCounter++}: ${op === '+' ? 'Suma' : 'Resta'} ${leftStr} ${op} ${rightStr}</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono bg-white p-3 border border-gray-200 rounded-lg my-2">
+                                ${stepRes.substeps.map(sb => `<div>${sb}</div>`).join('')}
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 my-2">
+                                ${renderMatrixHTML(leftMat, leftStr)}
+                                <span class="text-xl font-bold font-mono text-pmRed-600">${op}</span>
+                                ${renderMatrixHTML(rightMat, rightStr)}
+                                <span class="text-xl font-bold font-mono text-gray-400">=</span>
+                                ${renderMatrixHTML(stepRes.result, "Resultado Parcial")}
+                            </div>
+                        </div>`;
+                        return stepRes.result;
+                    }
+
+                    opIdx = findLowestOp(s, ['*', '·']);
+                    if (opIdx !== -1) {
+                        let leftStr = s.substring(0, opIdx).trim();
+                        let rightStr = s.substring(opIdx + 1).trim();
+
+                        let leftMat = parseAndEval(leftStr);
+                        let rightMat = parseAndEval(rightStr);
+
+                        let mult = multiplyMatricesGeneral(leftMat, rightMat);
+                        stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepCounter++}: Producto ${leftStr} · ${rightStr}</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono bg-white p-3 border border-gray-200 rounded-lg my-2">
+                                ${mult.steps.map(sb => `<div>${sb}</div>`).join('')}
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 my-2">
+                                ${renderMatrixHTML(leftMat, leftStr)}
+                                <span class="text-xl font-bold font-mono text-pmRed-600">·</span>
+                                ${renderMatrixHTML(rightMat, rightStr)}
+                                <span class="text-xl font-bold font-mono text-gray-400">=</span>
+                                ${renderMatrixHTML(mult.result, "Resultado Parcial")}
+                            </div>
+                        </div>`;
+                        return mult.result;
+                    }
+
+                    opIdx = findLowestOp(s, ['^']);
+                    if (opIdx !== -1) {
+                        let baseStr = s.substring(0, opIdx).trim();
+                        let expStr = s.substring(opIdx + 1).trim();
+                        let exp = parseInt(expStr, 10);
+
+                        let baseMat = parseAndEval(baseStr);
+                        let current = baseMat;
+
+                        for (let p = 2; p <= exp; p++) {
+                            let mult = multiplyMatricesGeneral(current, baseMat);
+                            current = mult.result;
+                        }
+
+                        stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepCounter++}: Potencia (${baseStr})<sup>${exp}</sup></span>
+                            <div class="flex flex-wrap items-center gap-3 my-2">
+                                ${renderMatrixHTML(current, `(${baseStr})^${exp}`)}
+                            </div>
+                        </div>`;
+                        return current;
+                    }
+
+                    let scalarMatch = s.match(/^([+-]?\d*\.?\d+)\s*\*?\s*([A-D])$/);
+                    if (scalarMatch) {
+                        let scalarVal = parseFloat(scalarMatch[1]);
+                        let matName = scalarMatch[2];
+                        let res = scaleMatrix(matrices[matName], scalarVal);
+                        stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepCounter++}: Escalar ${scalarVal} · ${matName}</span>
+                            <div class="flex flex-wrap items-center gap-3 my-2">
+                                ${renderMatrixHTML(res, `${scalarVal}${matName}`)}
+                            </div>
+                        </div>`;
+                        return res;
+                    }
+
+                    if (matrices[s]) return matrices[s];
+
+                    throw new Error(`Término no reconocido o mal formado: "${s}"`);
+                }
+
+                function isBalanced(str) {
+                    let depth = 0;
+                    for (let c of str) {
+                        if (c === '(' || c === '[') depth++;
+                        if (c === ')' || c === ']') depth--;
+                        if (depth < 0) return false;
+                    }
+                    return depth === 0;
+                }
+
+                function findLowestOp(str, ops) {
+                    let depth = 0;
+                    for (let i = str.length - 1; i >= 0; i--) {
+                        let c = str[i];
+                        if (c === ')' || c === ']') depth++;
+                        else if (c === '(' || c === '[') depth--;
+                        else if (depth === 0 && ops.includes(c)) {
+                            if (c === '-' && (i === 0 || "+-*/·(^[".includes(str[i - 1]))) continue;
+                            return i;
+                        }
+                    }
+                    return -1;
+                }
+
+                const finalResult = parseAndEval(exprStr);
+
+                stepsHTML += `<div class="p-6 bg-pmRed-50 border border-pmRed-100 rounded-2xl text-center">
+                    <span class="text-xs font-bold uppercase tracking-wider text-pmRed-700 block mb-2">RESULTADO FINAL</span>
+                    <div class="flex justify-center">
+                        ${renderMatrixHTML(finalResult, "")}
+                    </div>
+                </div>`;
+
+                container.innerHTML = stepsHTML;
+
+            } catch (err) {
+                container.innerHTML = `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold">
+                    Error al procesar la expresión: ${err.message}
+                </div>`;
+            }
+        }
+
+        // ================= MATRIZ INVERSA =================
+        function generateInvMatrix() {
+            const n = parseInt(document.getElementById('inv-order').value);
+            renderMatrixInputs('container-matrix-inv', n, n, 'minv');
+        }
+
+        function calculateInverseAdj() {
+            const n = parseInt(document.getElementById('inv-order').value);
+            const A = getMatrixFromInputs('minv', n, n);
+
+            const panel = document.getElementById('inv-result-panel');
+            const container = document.getElementById('inv-steps-container');
+            container.innerHTML = '';
+            panel.classList.remove('hidden');
+
+            let stepsHTML = `<div class="text-sm text-gray-700 font-mono mb-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                Fórmula de la Inversa: <span class="font-bold text-pmRed-600">A⁻¹ = Adj(Aᵀ) / |A|</span>
+            </div>`;
+
+            let det = new Fraction(0);
+            let detSteps = '';
+            if (n === 2) {
+                const p1 = A[0][0].mul(A[1][1]);
+                const p2 = A[0][1].mul(A[1][0]);
+                det = p1.sub(p2);
+                detSteps = `|A| = (${A[0][0]} · ${A[1][1]}) - (${A[0][1]} · ${A[1][0]}) = ${p1} - (${p2}) = ${det}`;
+            } else if (n === 3) {
+                const d1 = A[0][0].mul(A[1][1]).mul(A[2][2]);
+                const d2 = A[1][0].mul(A[2][1]).mul(A[0][2]);
+                const d3 = A[2][0].mul(A[0][1]).mul(A[1][2]);
+                
+                const e1 = A[0][2].mul(A[1][1]).mul(A[2][0]);
+                const e2 = A[1][2].mul(A[2][1]).mul(A[0][0]);
+                const e3 = A[2][2].mul(A[0][1]).mul(A[1][0]);
+
+                const posSum = d1.add(d2).add(d3);
+                const negSum = e1.add(e2).add(e3);
+                det = posSum.sub(negSum);
+
+                detSteps = `|A| = (${d1} + ${d2} + ${d3}) - (${e1} + ${e2} + ${e3}) = ${posSum} - (${negSum}) = ${det}`;
+            }
+
+            stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">1) Determinante de la matriz (|A|)</span>
+                <p class="text-sm font-mono text-gray-800 mb-2">${detSteps}</p>
+                <p class="text-xs font-bold font-mono text-pmRed-600">|A| = ${det}</p>
+            </div>`;
+
+            if (det.equalsZero()) {
+                container.innerHTML = stepsHTML + `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold">
+                    El determinante es 0 (|A| = 0). La matriz es singular y no posee inversa.
+                </div>`;
+                return;
+            }
+
+            let At = [];
+            for (let i = 0; i < n; i++) {
+                let row = [];
+                for (let j = 0; j < n; j++) row.push(A[j][i]);
+                At.push(row);
+            }
+
+            stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">2) Traspuesta de A (Aᵀ)</span>
+                <div class="flex items-center space-x-4">
+                    ${renderMatrixHTML(A, "Matriz A")}
+                    <span class="text-xl font-bold font-mono">⇒</span>
+                    ${renderMatrixHTML(At, "Matriz Aᵀ")}
+                </div>
+            </div>`;
+
+            let adjMatrix = [];
+            let cofactoresHTML = '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs my-2">';
+
+            for (let i = 0; i < n; i++) {
+                let adjRow = [];
+                for (let j = 0; j < n; j++) {
+                    let sub = [];
+                    for (let r = 0; r < n; r++) {
+                        if (r === i) continue;
+                        let subRow = [];
+                        for (let c = 0; c < n; c++) {
+                            if (c === j) continue;
+                            subRow.push(At[r][c]);
+                        }
+                        sub.push(subRow);
+                    }
+
+                    let subDet = n === 2 ? sub[0][0] : sub[0][0].mul(sub[1][1]).sub(sub[0][1].mul(sub[1][0]));
+                    const sign = ((i + j) % 2 === 0) ? 1 : -1;
+                    const finalCof = subDet.mul(new Fraction(sign));
+                    adjRow.push(finalCof);
+
+                    const signStr = sign === 1 ? '+' : '-';
+                    if (n === 3) {
+                        cofactoresHTML += `<div class="bg-white p-2 border border-gray-200 rounded-lg">
+                            <span class="font-bold">[${i+1},${j+1}]</span> = ${signStr} [ ${sub[0][0]}·${sub[1][1]} - (${sub[0][1]}·${sub[1][0]}) ] = <span class="font-bold text-pmRed-600">${finalCof}</span>
+                        </div>`;
+                    } else {
+                        cofactoresHTML += `<div class="bg-white p-2 border border-gray-200 rounded-lg">
+                            <span class="font-bold">[${i+1},${j+1}]</span> = ${finalCof}
+                        </div>`;
+                    }
+                }
+                adjMatrix.push(adjRow);
+            }
+            cofactoresHTML += '</div>';
+
+            stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">3) Matriz Adjunta de Aᵀ</span>
+                ${cofactoresHTML}
+                <div class="mt-3">
+                    ${renderMatrixHTML(adjMatrix, "Adj(Aᵀ)")}
+                </div>
+            </div>`;
+
+            let invMatrix = [];
+            for (let i = 0; i < n; i++) {
+                let row = [];
+                for (let j = 0; j < n; j++) {
+                    row.push(adjMatrix[i][j].div(det));
+                }
+                invMatrix.push(row);
+            }
+
+            stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">4) Inversa Final: A⁻¹ = Adj(Aᵀ) / |A|</span>
+                <p class="text-xs font-mono text-gray-700 mb-2">Dividir cada valor por ${det.toString()}:</p>
+                <div class="flex justify-center">
+                    ${renderMatrixHTML(invMatrix, "Matriz Inversa (A⁻¹)")}
+                </div>
+            </div>`;
+
+            container.innerHTML = stepsHTML;
+        }
+
+        function calculateInverseGJ() {
+            const n = parseInt(document.getElementById('inv-order').value);
+            const A = getMatrixFromInputs('minv', n, n);
+
+            const panel = document.getElementById('inv-result-panel');
+            const container = document.getElementById('inv-steps-container');
+            container.innerHTML = '';
+            panel.classList.remove('hidden');
+
+            let aug = [];
+            for (let i = 0; i < n; i++) {
+                let row = [];
+                for (let j = 0; j < n; j++) row.push(A[i][j]);
+                for (let j = 0; j < n; j++) row.push(new Fraction(i === j ? 1 : 0));
+                aug.push(row);
+            }
+
+            let stepsHTML = `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Matriz Aumentada Inicial [A | I]</span>
+                ${renderAugmentedMatrixHTML(aug, n)}
+            </div>`;
+
+            let stepNum = 1;
+
+            for (let i = 0; i < n; i++) {
+                let pivot = aug[i][i];
+                if (pivot.equalsZero()) {
+                    let swapIdx = -1;
+                    for (let k = i + 1; k < n; k++) {
+                        if (!aug[k][i].equalsZero()) { swapIdx = k; break; }
+                    }
+                    if (swapIdx === -1) {
+                        container.innerHTML = stepsHTML + `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold">
+                            La matriz es singular y no posee inversa.
+                        </div>`;
+                        return;
+                    }
+                    let temp = aug[i];
+                    aug[i] = aug[swapIdx];
+                    aug[swapIdx] = temp;
+                    pivot = aug[i][i];
+                    stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepNum++}: Intercambio de Filas (Fila ${i+1} ↔ Fila ${swapIdx+1})</span>
+                        ${renderAugmentedMatrixHTML(aug, n)}
+                    </div>`;
+                }
+
+                if (!pivot.equalsOne()) {
+                    let oldRow = [...aug[i]];
+                    for (let j = 0; j < 2 * n; j++) aug[i][j] = aug[i][j].div(pivot);
+                    
+                    stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepNum++}: Normalizar Fila ${i+1} (Dividir entre pivote ${pivot.toString()})</span>
+                        <div class="font-mono text-xs bg-white p-3 border border-gray-200 rounded-lg mb-2">
+                            F${i+1} = F${i+1} / (${pivot.toString()})
+                        </div>
+                        ${renderAugmentedMatrixHTML(aug, n)}
+                    </div>`;
+                }
+
+                for (let k = 0; k < n; k++) {
+                    if (k !== i && !aug[k][i].equalsZero()) {
+                        const factor = aug[k][i];
+                        let rCalc1 = `F${k+1} : `;
+                        let rCalc2 = `F${i+1} · (${factor.toString()}) : `;
+                        let rRes = `Resta : `;
+
+                        let newRow = [];
+                        for (let j = 0; j < 2 * n; j++) {
+                            const valK = aug[k][j];
+                            const valI = aug[i][j].mul(factor);
+                            const res = valK.sub(valI);
+                            newRow.push(res);
+
+                            rCalc1 += `${valK.toString()} \t`;
+                            rCalc2 += `${valI.toString()} \t`;
+                            rRes += `${res.toString()} \t`;
+                        }
+                        aug[k] = newRow;
+
+                        stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepNum++}: Hacer Cero en Fila ${k+1} (Columna ${i+1})</span>
+                            <div class="font-mono text-xs bg-white p-3 border border-gray-200 rounded-lg mb-2 space-y-1">
+                                <div class="text-gray-600">${rCalc1}</div>
+                                <div class="text-gray-600 border-b border-gray-300 pb-1">-${rCalc2}</div>
+                                <div class="font-bold text-pmRed-600">${rRes}</div>
+                            </div>
+                            ${renderAugmentedMatrixHTML(aug, n)}
+                        </div>`;
+                    }
+                }
+            }
+
+            let inv = [];
+            for (let i = 0; i < n; i++) {
+                let row = [];
+                for (let j = n; j < 2 * n; j++) row.push(aug[i][j]);
+                inv.push(row);
+            }
+
+            stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Matriz Inversa Resultante (A⁻¹)</span>
+                <div class="flex justify-center">${renderMatrixHTML(inv, "A⁻¹")}</div>
+            </div>`;
+
+            container.innerHTML = stepsHTML;
+        }
+
+        // ================= SISTEMAS DE ECUACIONES =================
+        function generateSystemFields() {
+            const size = parseInt(document.getElementById('sys-size').value);
+            const container = document.getElementById('container-system-inputs');
+            container.innerHTML = '';
+
+            const vars = ['x', 'y', 'z'];
+            for (let i = 0; i < size; i++) {
+                const eqRow = document.createElement('div');
+                eqRow.className = 'flex items-center space-x-2 bg-gray-50 p-2 rounded-xl border border-gray-200 font-mono text-sm';
+
+                for (let j = 0; j < size; j++) {
+                    const inputA = document.createElement('input');
+                    inputA.type = 'number';
+                    inputA.id = `sys_a_${i}_${j}`;
+                    inputA.value = Math.floor(Math.random() * 9) - 4;
+                    inputA.className = 'w-12 h-10 text-center font-bold bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-pmRed-600 focus:outline-none';
+
+                    const labelVar = document.createElement('span');
+                    labelVar.textContent = vars[j] + (j < size - 1 ? ' +' : '');
+
+                    eqRow.appendChild(inputA);
+                    eqRow.appendChild(labelVar);
+                }
+
+                const labelEq = document.createElement('span');
+                labelEq.textContent = '=';
+                labelEq.className = 'px-1 font-bold text-pmRed-600';
+
+                const inputB = document.createElement('input');
+                inputB.type = 'number';
+                inputB.id = `sys_b_${i}`;
+                inputB.value = Math.floor(Math.random() * 9) - 4;
+                inputB.className = 'w-12 h-10 text-center font-bold bg-white border border-gray-300 rounded-lg focus:ring-1 focus:ring-pmRed-600 focus:outline-none';
+
+                eqRow.appendChild(labelEq);
+                eqRow.appendChild(inputB);
+                container.appendChild(eqRow);
+            }
+        }
+
+        function fillRandomSystem() {
+            const size = parseInt(document.getElementById('sys-size').value);
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    document.getElementById(`sys_a_${i}_${j}`).value = Math.floor(Math.random() * 11) - 5;
+                }
+                document.getElementById(`sys_b_${i}`).value = Math.floor(Math.random() * 11) - 5;
+            }
+        }
+
+        function solveSystem(method) {
+            const size = parseInt(document.getElementById('sys-size').value);
+            
+            let aug = [];
+            for (let i = 0; i < size; i++) {
+                const row = [];
+                for (let j = 0; j < size; j++) {
+                    row.push(parseFraction(document.getElementById(`sys_a_${i}_${j}`).value));
+                }
+                row.push(parseFraction(document.getElementById(`sys_b_${i}`).value));
+                aug.push(row);
+            }
+
+            const panel = document.getElementById('sys-result-panel');
+            const container = document.getElementById('sys-steps-container');
+            const titleEl = document.getElementById('sys-result-title');
+            
+            titleEl.textContent = method === 'gauss' ? 'Solución por Eliminación de Gauss' : 'Solución por Gauss-Jordan';
+            container.innerHTML = '';
+            panel.classList.remove('hidden');
+
+            let stepsHTML = `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Matriz Aumentada Inicial [A | B]</span>
+                ${renderAugmentedMatrixHTML(aug, size)}
+            </div>`;
+
+            let stepNum = 1;
+            const vars = ['x', 'y', 'z'];
+
+            for (let k = 1; k < size; k++) {
+                if (!aug[k][0].equalsZero()) {
+                    const m1 = aug[k][0];
+                    const m2 = aug[0][0];
+
+                    let newRow = [];
+                    let rCalculatedStr1 = `F${k+1} · (${m2}) : `;
+                    let rCalculatedStr2 = `F1 · (${m1}) : `;
+                    let rResultStr      = `Resta : `;
+
+                    for (let j = 0; j <= size; j++) {
+                        const valK = aug[k][j].mul(m2);
+                        const val0 = aug[0][j].mul(m1);
+                        const res = valK.sub(val0);
+                        newRow.push(res);
+
+                        rCalculatedStr1 += `${valK.toString()} \t`;
+                        rCalculatedStr2 += `${val0.toString()} \t`;
+                        rResultStr += `${res.toString()} \t`;
+                    }
+
+                    aug[k] = newRow;
+
+                    stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepNum++}: Eliminación en F<sub>${k+1}</sub></span>
+                        <div class="font-mono text-xs bg-white p-3 border border-gray-200 rounded-lg mb-2 space-y-1">
+                            <div class="text-gray-600">${rCalculatedStr1}</div>
+                            <div class="text-gray-600 border-b border-gray-300 pb-1">-${rCalculatedStr2}</div>
+                            <div class="font-bold text-pmRed-600">${rResultStr}</div>
+                        </div>
+                        ${renderAugmentedMatrixHTML(aug, size)}
+                    </div>`;
+                }
+            }
+
+            if (size === 3 && !aug[2][1].equalsZero()) {
+                const m1 = aug[2][1];
+                const m2 = aug[1][1];
+
+                let newRow = [];
+                let rCalculatedStr1 = `F3 · (${m2}) : `;
+                let rCalculatedStr2 = `F2 · (${m1}) : `;
+                let rResultStr      = `Resta : `;
+
+                for (let j = 0; j <= size; j++) {
+                    const val3 = aug[2][j].mul(m2);
+                    const val2 = aug[1][j].mul(m1);
+                    const res = val3.sub(val2);
+                    newRow.push(res);
+
+                    rCalculatedStr1 += `${val3.toString()} \t`;
+                    rCalculatedStr2 += `${val2.toString()} \t`;
+                    rResultStr += `${res.toString()} \t`;
+                }
+                aug[2] = newRow;
+
+                stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepNum++}: Cero en F<sub>3</sub> (Columna 2)</span>
+                    <div class="font-mono text-xs bg-white p-3 border border-gray-200 rounded-lg mb-2 space-y-1">
+                        <div class="text-gray-600">${rCalculatedStr1}</div>
+                        <div class="text-gray-600 border-b border-gray-300 pb-1">-${rCalculatedStr2}</div>
+                        <div class="font-bold text-pmRed-600">${rResultStr}</div>
+                    </div>
+                    ${renderAugmentedMatrixHTML(aug, size)}
+                </div>`;
+            }
+
+            if (method === 'gauss-jordan' && size === 3) {
+                for (let k = 1; k >= 0; k--) {
+                    if (!aug[k][2].equalsZero()) {
+                        const m1 = aug[k][2];
+                        const m2 = aug[2][2];
+                        let newRow = [];
+                        let rCalculatedStr1 = `F${k+1} · (${m2}) : `;
+                        let rCalculatedStr2 = `F3 · (${m1}) : `;
+                        let rResultStr      = `Resta : `;
+
+                        for (let j = 0; j <= size; j++) {
+                            const valK = aug[k][j].mul(m2);
+                            const val3 = aug[2][j].mul(m1);
+                            const res = valK.sub(val3);
+                            newRow.push(res);
+
+                            rCalculatedStr1 += `${valK.toString()} \t`;
+                            rCalculatedStr2 += `${val3.toString()} \t`;
+                            rResultStr += `${res.toString()} \t`;
+                        }
+                        aug[k] = newRow;
+
+                        stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepNum++}: Cero Superior en F<sub>${k+1}</sub></span>
+                            <div class="font-mono text-xs bg-white p-3 border border-gray-200 rounded-lg mb-2 space-y-1">
+                                <div class="text-gray-600">${rCalculatedStr1}</div>
+                                <div class="text-gray-600 border-b border-gray-300 pb-1">-${rCalculatedStr2}</div>
+                                <div class="font-bold text-pmRed-600">${rResultStr}</div>
+                            </div>
+                            ${renderAugmentedMatrixHTML(aug, size)}
+                        </div>`;
+                    }
+                }
+
+                if (!aug[0][1].equalsZero()) {
+                    const m1 = aug[0][1];
+                    const m2 = aug[1][1];
+                    let newRow = [];
+                    let rCalculatedStr1 = `F1 · (${m2}) : `;
+                    let rCalculatedStr2 = `F2 · (${m1}) : `;
+                    let rResultStr      = `Resta : `;
+
+                    for (let j = 0; j <= size; j++) {
+                        const val1 = aug[0][j].mul(m2);
+                        const val2 = aug[1][j].mul(m1);
+                        const res = val1.sub(val2);
+                        newRow.push(res);
+
+                        rCalculatedStr1 += `${val1.toString()} \t`;
+                        rCalculatedStr2 += `${val2.toString()} \t`;
+                        rResultStr += `${res.toString()} \t`;
+                    }
+                    aug[0] = newRow;
+
+                    stepsHTML += `<div class="step-card bg-gray-50 p-4 rounded-r-xl mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-pmRed-600 block mb-1">Paso ${stepNum++}: Cero Superior en F<sub>1</sub></span>
+                        <div class="font-mono text-xs bg-white p-3 border border-gray-200 rounded-lg mb-2 space-y-1">
+                            <div class="text-gray-600">${rCalculatedStr1}</div>
+                            <div class="text-gray-600 border-b border-gray-300 pb-1">-${rCalculatedStr2}</div>
+                            <div class="font-bold text-pmRed-600">${rResultStr}</div>
+                        </div>
+                        ${renderAugmentedMatrixHTML(aug, size)}
+                    </div>`;
+                }
+            }
+
+            stepsHTML += `<div class="bg-gray-100 p-4 rounded-xl my-4 font-mono text-sm space-y-3 border border-gray-300">
+                <span class="text-xs font-bold uppercase text-pmRed-600 block font-sans">Sustitución e Incógnitas</span>`;
+
+            let solutions = {};
+            for (let i = size - 1; i >= 0; i--) {
+                let valRight = aug[i][size];
+
+                for (let j = i + 1; j < size; j++) {
+                    valRight = valRight.sub(aug[i][j].mul(solutions[vars[j]]));
+                }
+
+                const coef = aug[i][i];
+                if (coef.equalsZero()) {
+                    container.innerHTML = `<div class="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-bold">
+                        El sistema no tiene solución única.
+                    </div>`;
+                    return;
+                }
+
+                const finalVal = valRight.div(coef);
+                solutions[vars[i]] = finalVal;
+
+                stepsHTML += `<div class="bg-white p-2 border border-gray-200 rounded-lg">
+                    <div>${coef.toString()}${vars[i]} = ${valRight.toString()}</div>
+                    <div class="font-bold text-pmRed-600">${vars[i]} = ${valRight.toString()} / ${coef.toString()} = ${finalVal.toString()}</div>
+                </div>`;
+            }
+            stepsHTML += `</div>`;
+
+            stepsHTML += `<div class="p-6 bg-pmRed-50 border border-pmRed-100 rounded-2xl text-center">
+                <span class="text-xs font-bold uppercase tracking-wider text-pmRed-700 block mb-2">VECTOR SOLUCIÓN</span>
+                <div class="flex justify-center space-x-6 font-mono text-lg font-bold text-gray-900">
+                    ${Object.keys(solutions).reverse().map(v => `<div>${v} = <span class="text-pmRed-600">${solutions[v].toString()}</span></div>`).join('')}
+                </div>
+            </div>`;
+
+            container.innerHTML = stepsHTML;
+        }
+
+        window.onload = function() {
+            generateOpMatrices();
+            generateCombMatrices();
+            generateInvMatrix();
+            generateSystemFields();
+        };
+    </script>
+</body>
+</html>
